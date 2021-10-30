@@ -116,6 +116,7 @@ defmodule ToyRobot do
         end
       end
     end
+
   end
 
   def rotate_for_y(del_y, robot) do
@@ -161,7 +162,7 @@ defmodule ToyRobot do
     end
   end
 
-  def move_for_x(del_x, robot) when del_x == 1 do
+  def move_for_x(del_x, robot) when del_x <= 1 do
     robot = move(robot)
     send_robot_status(robot, :cli_robot_state)
   end
@@ -177,7 +178,40 @@ defmodule ToyRobot do
 
     del_x = goal_x - robot.x
     del_y = @robot_map_y_atom_to_num[goal_y] - @robot_map_y_atom_to_num[robot.y]
+    send_robot_status(robot, :cli_robot_state)
     #rotate_for_x(del_x, robot)
+    rotate_for_y(del_y, robot)
+    if del_y > 0 do  # north
+      robot = %ToyRobot.Position{robot | facing: :north}
+      move_for_x(del_y, robot)
+      robot = %ToyRobot.Position{robot | y: goal_y}
+      if del_x > 0 do
+        rotate_for_x(del_x, robot)
+        robot = %ToyRobot.Position{robot | facing: :east}
+        move_for_x(del_x, robot)
+      end
+      if del_x < 0 do
+        rotate_for_x(-del_x, robot)
+        robot = %ToyRobot.Position{robot | facing: :west}
+        move_for_x(-del_x, robot)
+      end
+    end
+    if del_y < 0 do
+      robot = %ToyRobot.Position{robot | facing: :south}
+      move_for_x(-del_y, robot)
+      robot = %ToyRobot.Position{robot | y: goal_y}
+      if del_x > 0 do
+        rotate_for_x(del_x, robot)
+        robot = %ToyRobot.Position{robot | facing: :east}
+        move_for_x(del_x, robot)
+      end
+      if del_x < 0 do
+        rotate_for_x(-del_x, robot)
+        robot = %ToyRobot.Position{robot | facing: :west}
+        move_for_x(-del_x, robot)
+      end
+    end
+
     #rotate_for_y(del_y, robot)
     #move_for_x(del_x, robot)
 
