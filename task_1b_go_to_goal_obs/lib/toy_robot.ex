@@ -77,6 +77,187 @@ defmodule ToyRobot do
       num
     end
   end
+  ## this function checks only right recursively
+  def right_check(robot, id) do
+    robot = right(robot)
+    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+    Process.register(pid, :client_toyrobot)
+    val = obstacle()
+    cond do
+      val == :false ->
+        ## if no obstacle present
+        robot = move(robot)
+        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+        Process.register(pid, :client_toyrobot)
+        obstacle()
+        {:ok, robot}
+      val == :true ->
+        ## if obstacle is present
+        robot = left(robot)
+        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+        Process.register(pid, :client_toyrobot)
+        obstacle()
+        robot = move(robot)
+        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+        Process.register(pid, :client_toyrobot)
+        obstacle()
+        right_check(robot, id)
+    end
+  end
+
+## this function checks only left recursively
+  def left_check(robot, id) do
+    robot = left(robot)
+    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+    Process.register(pid, :client_toyrobot)
+    val = obstacle()
+    cond do
+      val == :false ->
+        ## if no obstacle present
+        robot = move(robot)
+        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+        Process.register(pid, :client_toyrobot)
+        obstacle()
+        {:ok, robot}
+      val == :true ->
+        ## if obstacle is present
+        robot = right(robot)
+        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+        Process.register(pid, :client_toyrobot)
+        obstacle()
+        cond do
+          robot.y == :a and robot.facing == :south ->
+            robot = right(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            robot = right(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            {:ok, robot} = right_check(robot, id)
+            {:ok, robot}
+          robot.y == :e and robot.facing == :north ->
+            robot = left(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            robot = left(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            {:ok, robot} = right_check(robot, id)
+            {:ok, robot}
+          robot.x == 1 and robot.facing == :west ->
+            robot = left(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            robot = left(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            {:ok, robot} = right_check(robot, id)
+            {:ok, robot}
+
+          robot.x == 5 and robot.facing == :east ->
+            robot = left(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            robot = left(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            {:ok, robot} = right_check(robot, id)
+            {:ok, robot}
+          :true ->
+            robot = move(robot)
+            pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+            Process.register(pid, :client_toyrobot)
+            obstacle()
+            left_check(robot, id)
+        end
+    end
+  end
+## this function checks right and left both recursively
+def right_left_check(first, robot, id) do
+  cond do
+    first == :right ->
+      robot = right(robot)
+      pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+      Process.register(pid, :client_toyrobot)
+      val = obstacle()
+      cond do
+        val == :false ->
+          ## if no obstacle at right
+          {:ok, robot}
+        val == :true ->
+          ## if obstacle is present at right, check left
+          robot = left(robot)
+          pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+          Process.register(pid, :client_toyrobot)
+          obstacle()
+          robot = left(robot)
+          pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+          Process.register(pid, :client_toyrobot)
+          val = obstacle()
+          cond do
+            val == :false ->
+              ## if no obstacle at left
+              {:ok, robot}
+            val == :true ->
+              ## if obstacle present at left
+              robot = right(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              obstacle()
+              robot = move(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              obstacle()
+              right_left_check(:right, robot, id)
+          end
+      end
+    first == :left ->
+      robot = left(robot)
+      pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+      Process.register(pid, :client_toyrobot)
+      val = obstacle()
+      cond do
+        val == :false ->
+          ## if no obstacle at left
+          {:ok, robot}
+        val == :true ->
+          ## if obstacle is present at left, check right
+          robot = right(robot)
+          pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+          Process.register(pid, :client_toyrobot)
+          obstacle()
+          robot = right(robot)
+          pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+          Process.register(pid, :client_toyrobot)
+          val = obstacle()
+          cond do
+            val == :false ->
+              ## if no obstacle at right
+              {:ok, robot}
+            val == :true ->
+              ## if obstacle present at right
+              robot = left(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              obstacle()
+              robot = move(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              obstacle()
+              right_left_check(:left, robot, id)
+          end
+      end
+    end
+end
+
 
 
   def way_to_go(goal_x, goal_y, robot, id) do
@@ -86,17 +267,53 @@ defmodule ToyRobot do
     cond do
       robot.facing == :east ->
         cond do
-          @robot_map_y_atom_to_num[robot.y] < @robot_map_y_atom_to_num[goal_y] -> # goal is located above
+          @robot_map_y_atom_to_num[robot.y] < @robot_map_y_atom_to_num[goal_y] ->
+              ## goal is located above
               robot = left(robot)
               pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
               Process.register(pid, :client_toyrobot)
               val = obstacle()
               if val == :true do
+                ## if obstacle is present at left take u turn (west)
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
-                {:ok, robot}
+                obstacle()
+                cond do
+                robot.y == :a ->
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot}  ## note: axix change
+                :true ->
+                  robot = left(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  val = obstacle()
+                  cond do
+                    val == :false ->
+                      ## if obstacle is not present
+                      robot = move(robot)
+                      pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                      Process.register(pid, :client_toyrobot)
+                      obstacle()
+                      {:ok, robot}
+                    val == :true ->
+                      ## if obstacle is present, take u turn
+                      robot = right(robot)
+                      pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                      Process.register(pid, :client_toyrobot)
+                      obstacle()
+                      robot = move(robot)
+                      pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                      Process.register(pid, :client_toyrobot)
+                      obstacle()
+                      {:ok, robot} = right_left_check(:right, robot, id)
+                      {:ok, robot}
+                  end
+                end
               else
                 {:ok, robot}
               end
@@ -110,12 +327,155 @@ defmodule ToyRobot do
                 robot = right(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
-                {:ok, robot}
+                obstacle()
+                cond do
+                  robot.y == :e ->
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot}  ## note: axix change
+                  :true ->
+                    robot = right(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## if obstacle is not present
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present, take u turn
+                        robot = left(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:left, robot, id)
+                        {:ok, robot}
+                    end
+                  end
               else
                 {:ok, robot}
               end
-          robot.y == goal_y -> "still  left to consider"
+          robot.y == goal_y -> ## goal is located on the same line
+            cond do
+              robot.y == :a ->
+              ## check only left
+              robot = left(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              val = obstacle()
+              cond do
+                val == :false ->
+                  ## if no obstacle at left, move one block forward
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot}
+                val == :true ->
+                  ## if obstacle is present at left, take u turn and chaeck right
+                  robot = left(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot}
+              end
+              robot.y == :e ->
+              ## check only right
+              robot = right(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              val = obstacle()
+              cond do
+                val == :false ->
+                  ## if no obstacle at right, move one block forward
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot}
+                val == :true ->
+                  ## if obstacle is present at right, take u turn and chaeck right
+                  robot = right(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot}
+              end
+              :true ->
+                ## check right and left both
+                robot = right(robot)
+                pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                Process.register(pid, :client_toyrobot)
+                val = obstacle()
+                cond do
+                  val == :false ->
+                    ## if no obstacle is present
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot}
+                  val == :true ->
+                    ## if obstacle is present
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## no obstacle at left
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present at left side, take u turn move oon block
+                        robot = left(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:left, robot, id)
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                    end
+                end
+            end
         end
       robot.facing == :west ->
         cond do
@@ -128,14 +488,45 @@ defmodule ToyRobot do
                 robot = right(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
-                {:ok, robot}
+                obstacle()
+                cond do
+                  robot.y == :a ->
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot}  ## note: axix change
+                  :true ->
+                    robot = right(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## if obstacle is not present
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present, take u turn
+                        robot = left(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:left, robot, id)
+                        {:ok, robot}
+                    end
+                  end
               else
                 {:ok, robot}
               end
-          #############################
-          #### mooving along Y axix####
-          #############################
           @robot_map_y_atom_to_num[robot.y] > @robot_map_y_atom_to_num[goal_y] -> # goal is located below
               robot = left(robot)
               pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
@@ -145,13 +536,159 @@ defmodule ToyRobot do
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
-                {:ok, robot}
+                obstacle()
+                cond do
+                  robot.y == :e ->
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = right_check(robot, id)
+                    {:ok, robot}  ## note: axix change
+                  :true ->
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## if obstacle is not present
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present, take u turn
+                        robot = right(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:right, robot, id)
+                        {:ok, robot}
+                    end
+                  end
               else
                 {:ok, robot}
               end
-          robot.y == goal_y -> "still  left to consider"
+          robot.y == goal_y -> ## if goal is loacted on the same axis when approaching from west
+            cond do
+              robot.y == :e ->
+              ## check only left
+              robot = left(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              val = obstacle()
+              cond do
+                val == :false ->
+                  ## if no obstacle at left, move one block forward
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot}
+                val == :true ->
+                  ## if obstacle is present at left, take u turn and chaeck right
+                  robot = left(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot}
+              end
+              robot.y == :a ->
+              ## check only right
+              robot = right(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              val = obstacle()
+              cond do
+                val == :false ->
+                  ## if no obstacle at right, move one block forward
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot}
+                val == :true ->
+                  ## if obstacle is present at right, take u turn and chaeck right
+                  robot = right(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot}
+              end
+              :true ->
+                ## check right and left both
+                robot = right(robot)
+                pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                Process.register(pid, :client_toyrobot)
+                val = obstacle()
+                cond do
+                  val == :false ->
+                    ## if no obstacle is present
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot}
+                  val == :true ->
+                    ## if obstacle is present
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## no obstacle at left
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present at left side, take u turn move oon block
+                        robot = left(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:right, robot, id)
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                    end
+                end
+            end
         end
+      #############################
+      #### mooving along Y axix####
+      #############################
       robot.facing == :north ->
         cond do
           robot.x > goal_x -> # goal is located left
@@ -164,8 +701,42 @@ defmodule ToyRobot do
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
-                {:ok, robot}
+                obstacle()
+                cond do
+                  robot.x == 5 ->
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = right_check(robot, id)
+                    {:ok, robot}  ## note: axix change
+                  :true ->
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## if obstacle is not present
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present, take u turn
+                        robot = right(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:right, robot, id)
+                        {:ok, robot}
+                    end
+                  end
               else
                 {:ok, robot}
               end
@@ -179,12 +750,163 @@ defmodule ToyRobot do
                 robot = right(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
-                {:ok, robot}
+                obstacle()
+                cond do
+                  robot.x == 1 ->
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot}  ## note: axix change
+                  :true ->
+                    robot = right(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## if obstacle is not present
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present, take u turn
+                        robot = left(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:left, robot, id)
+                        {:ok, robot}
+                    end
+                  end
               else
                 {:ok, robot}
               end
-          robot.x == goal_x -> "still  left to consider"
+          robot.x == goal_x ->
+            cond do
+              robot.x == 1 ->
+              ## check only right
+              robot = right(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              val = obstacle()
+              cond do
+                val == :false ->
+                  ## if no obstacle at right, move one block forward
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+                val == :true ->
+                  ## if obstacle is present at right, take u turn and chaeck right
+                  robot = right(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+              end
+              robot.x == 5 ->
+              ## check only left
+              robot = left(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              val = obstacle()
+              cond do
+                val == :false ->
+                  ## if no obstacle at left, move one block forward
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+                val == :true ->
+                  ## if obstacle is present at left, take u turn and chaeck right
+                  robot = left(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+              end
+              :true ->
+                ## check right and left both
+                robot = right(robot)
+                pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                Process.register(pid, :client_toyrobot)
+                val = obstacle()
+                cond do
+                  val == :false ->
+                    ## if no obstacle is present
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag)end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                  val == :true ->
+                    ## if obstacle is present
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## no obstacle at left
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_check(robot, id)
+                        {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present at left side, take u turn move oon block
+                        robot = left(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:right, robot, id)
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                        {:ok, robot}
+                    end
+                end
+            end
         end
       robot.facing == :south ->
         cond do
@@ -197,8 +919,42 @@ defmodule ToyRobot do
                 robot = right(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
-                {:ok, robot}
+                obstacle()
+                cond do
+                  robot.x == 5 ->
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot}  ## note: axix change
+                  :true ->
+                    robot = right(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## if obstacle is not present
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present, take u turn
+                        robot = left(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:right, robot, id)
+                        {:ok, robot}
+                    end
+                  end
               else
                 {:ok, robot}
               end
@@ -211,12 +967,155 @@ defmodule ToyRobot do
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
-                {:ok, robot}
+                obstacle()
+                cond do
+                  robot.x == 1 ->
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = right_check(robot, id)
+                    {:ok, robot}  ## note: axix change
+                  :true ->
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## if obstacle is not present
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present, take u turn
+                        robot = right(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:right, robot, id)
+                        {:ok, robot}
+                    end
+                  end
               else
                 {:ok, robot}
               end
-          robot.x == goal_x -> "still  left to consider"
+          robot.x == goal_x ->
+            cond do
+              robot.x == 1 ->
+              ## check only left
+              robot = left(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              val = obstacle()
+              cond do
+                val == :false ->
+                  ## if no obstacle at left, move one block forward
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot}
+                val == :true ->
+                  ## if obstacle is present at left, take u turn and chaeck right
+                  robot = right(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot}
+              end
+              robot.x == 5 ->
+              ## check only right
+              robot = right(robot)
+              pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+              Process.register(pid, :client_toyrobot)
+              val = obstacle()
+              cond do
+                val == :false ->
+                  ## if no obstacle at right, move one block forward
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok , robot}
+                val == :true ->
+                  ## if obstacle is present at right, take u turn and chaeck right
+                  robot = left(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  robot = move(robot)
+                  pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                  Process.register(pid, :client_toyrobot)
+                  obstacle()
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot}
+              end
+              :true ->
+                ## check right and left both
+                robot = right(robot)
+                pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                Process.register(pid, :client_toyrobot)
+                val = obstacle()
+                cond do
+                  val == :false ->
+                    ## if no obstacle is present
+                    robot = move(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot}
+                  val == :true ->
+                    ## if obstacle is present
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    obstacle()
+                    robot = left(robot)
+                    pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                    Process.register(pid, :client_toyrobot)
+                    val = obstacle()
+                    cond do
+                      val == :false ->
+                        ## no obstacle at left
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                      val == :true ->
+                        ## if obstacle is present at left side, take u turn move oon block
+                        robot = left(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot} = right_left_check(:left, robot, id)
+                        robot = move(robot)
+                        pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
+                        Process.register(pid, :client_toyrobot)
+                        obstacle()
+                        {:ok, robot}
+                    end
+                end
+            end
         end
     end
   end
@@ -260,19 +1159,6 @@ defmodule ToyRobot do
     end
   end
 
-  def final_facing(del_x, del_y, robot) do
-    cond do
-      (del_y > 0) and (del_x > 0) -> %ToyRobot.Position{robot | facing: :east}
-      (del_y > 0) and (del_x < 0) -> %ToyRobot.Position{robot | facing: :west}
-      (del_y < 0) and (del_x > 0) -> %ToyRobot.Position{robot | facing: :east}
-      (del_y < 0) and (del_x < 0) -> %ToyRobot.Position{robot | facing: :west}
-      (del_y == 0) and (del_x > 0) -> %ToyRobot.Position{robot | facing: :east}
-      (del_y == 0) and (del_x < 0) -> %ToyRobot.Position{robot | facing: :west}
-      (del_y > 0) and (del_x == 0) -> %ToyRobot.Position{robot | facing: :north}
-      (del_y < 0) and (del_x == 0) -> %ToyRobot.Position{robot | facing: :south}
-      (del_y == 0) and (del_x == 0) -> robot
-    end
-  end
   ######################## 1 A #####################################################################
   def obstacle() do
     val = receive do
@@ -308,7 +1194,7 @@ defmodule ToyRobot do
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
+                obstacle()
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
@@ -357,7 +1243,7 @@ defmodule ToyRobot do
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
+                obstacle()
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
@@ -384,6 +1270,9 @@ defmodule ToyRobot do
                 {:ok, robot}
             end
         end
+      del_y == 0 ->
+        {:ok, robot} = stop_x(goal_x, goal_y, robot, id)
+        {:ok, robot}
     end
   end
 
@@ -415,7 +1304,7 @@ defmodule ToyRobot do
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
+                obstacle()
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
@@ -464,7 +1353,7 @@ defmodule ToyRobot do
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
-                val = obstacle()
+                obstacle()
                 robot = left(robot)
                 pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                 Process.register(pid, :client_toyrobot)
@@ -491,6 +1380,9 @@ defmodule ToyRobot do
                 {:ok, robot}
             end
         end
+      del_x == 0 ->
+        {:ok, robot} = stop_y(goal_x, goal_y, robot, id)
+        {:ok, robot}
     end
   end
   def stop_yx(goal_x, goal_y, robot, id) do
@@ -498,16 +1390,24 @@ defmodule ToyRobot do
     cond do
       robot.y == goal_y ->
         # y destination reached
-        {:ok, robot} = stop_x(goal_x, goal_y, robot, id)
-        cond do
-          # reached x
-          robot.x == goal_x -> {:ok, robot}
-          # not reach x
-          robot.x != goal_x -> "still left to consider"
+        if robot.x == goal_x do
+          {:ok, robot} ## if no displacment required for x
+        else
+          {:ok, robot} = stop_x(goal_x, goal_y, robot, id)
+          cond do
+            # reached x
+            robot.x == goal_x ->
+              {:ok, robot}
+            # not reach x
+            robot.x != goal_x ->
+              {:ok, robot} = stop_xy(goal_x, goal_y, robot, id)
+              {:ok, robot}
+          end
         end
       # y destination not reached
       robot.y != goal_y ->
         {:ok, robot} = stop_xy(goal_x, goal_y, robot, id)
+        {:ok, robot}
     end
   end
 
@@ -516,16 +1416,23 @@ defmodule ToyRobot do
     cond do
       robot.x == goal_x ->
         # x destination reached
-        {:ok, robot} = stop_y(goal_x, goal_y, robot, id)
-        cond do
-          # reached y
-          robot.y == goal_y -> {:ok, robot}
-          # not reach x
-          robot.y != goal_y -> "still left to consider"
+        if robot.y == goal_y do
+          {:ok, robot}
+        else
+          {:ok, robot} = stop_y(goal_x, goal_y, robot, id)
+          cond do
+            # reached y
+            robot.y == goal_y -> {:ok, robot}
+            # not reach x
+            robot.y != goal_y ->
+              {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+              {:ok, robot}
+          end
         end
       # y destination not reached
       robot.x != goal_x ->
         {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+        {:ok, robot}
     end
   end
   def stop(robot, goal_x, goal_y, cli_proc_name) do
@@ -536,9 +1443,16 @@ defmodule ToyRobot do
     pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
     Process.register(pid, :client_toyrobot)
     val = obstacle()
-    {:ok, r} = stop_yx(goal_x, goal_y, robot, id)
+    if val == :true do
+      {:ok, robot} = way_to_go(goal_x, goal_y, robot, id)
+      {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+      {:ok, robot}
+    else
+      stop_yx(goal_x, goal_y, robot, id)
+    end
+
+    #{:ok, r} = way_to_go(goal_x, goal_y, robot, id)
     #IO.puts("#{r.facing}, #{r.x}, #{r.y}")
-    {:ok, r}
   end
 
   @doc """
