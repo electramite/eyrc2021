@@ -410,6 +410,7 @@ end
                   Process.register(pid, :client_toyrobot)
                   obstacle()
                   {:ok, robot} = left_check(robot, id)
+                  {:ok, robot} = stop_xy(goal_x, goal_y, robot, id)
                   {:ok, robot}
                 val == :true ->
                   ## if obstacle is present at right, take u turn and chaeck right
@@ -888,7 +889,7 @@ end
                         {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
                         {:ok, robot}
                       val == :true ->
-                        ## if obstacle is present at left side, take u turn move oon block
+                        ## if obstacle is present at left side, take u turn move one block
                         robot = left(robot)
                         pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                         Process.register(pid, :client_toyrobot)
@@ -1022,6 +1023,7 @@ end
                   Process.register(pid, :client_toyrobot)
                   obstacle()
                   {:ok, robot} = right_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
                   {:ok, robot}
                 val == :true ->
                   ## if obstacle is present at left, take u turn and chaeck right
@@ -1034,6 +1036,7 @@ end
                   Process.register(pid, :client_toyrobot)
                   obstacle()
                   {:ok, robot} = left_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
                   {:ok, robot}
               end
               robot.x == 5 ->
@@ -1050,7 +1053,8 @@ end
                   Process.register(pid, :client_toyrobot)
                   obstacle()
                   {:ok, robot} = left_check(robot, id)
-                  {:ok , robot}
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
                 val == :true ->
                   ## if obstacle is present at right, take u turn and chaeck right
                   robot = left(robot)
@@ -1062,6 +1066,7 @@ end
                   Process.register(pid, :client_toyrobot)
                   obstacle()
                   {:ok, robot} = right_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
                   {:ok, robot}
               end
               :true ->
@@ -1078,6 +1083,7 @@ end
                     Process.register(pid, :client_toyrobot)
                     obstacle()
                     {:ok, robot} = left_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
                     {:ok, robot}
                   val == :true ->
                     ## if obstacle is present
@@ -1096,6 +1102,7 @@ end
                         pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                         Process.register(pid, :client_toyrobot)
                         obstacle()
+                        {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
                         {:ok, robot}
                       val == :true ->
                         ## if obstacle is present at left side, take u turn move oon block
@@ -1112,6 +1119,7 @@ end
                         pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                         Process.register(pid, :client_toyrobot)
                         obstacle()
+                        {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
                         {:ok, robot}
                     end
                 end
@@ -1211,7 +1219,10 @@ end
                 Process.register(pid, :client_toyrobot)
                 val = obstacle()
                 if val == :true do # if obstacle at north
-                ## still left to consider
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
                   {:ok, robot}
@@ -1406,6 +1417,7 @@ end
         end
       # y destination not reached
       robot.y != goal_y ->
+        {:ok, robot} = way_to_go(goal_x, goal_y, robot, id)
         {:ok, robot} = stop_xy(goal_x, goal_y, robot, id)
         {:ok, robot}
     end
@@ -1429,8 +1441,9 @@ end
               {:ok, robot}
           end
         end
-      # y destination not reached
+      # x destination not reached
       robot.x != goal_x ->
+        {:ok, robot} = way_to_go(goal_x, goal_y, robot, id)
         {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
         {:ok, robot}
     end
@@ -1445,14 +1458,10 @@ end
     val = obstacle()
     if val == :true do
       {:ok, robot} = way_to_go(goal_x, goal_y, robot, id)
-      {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
       {:ok, robot}
     else
       stop_yx(goal_x, goal_y, robot, id)
     end
-
-    #{:ok, r} = way_to_go(goal_x, goal_y, robot, id)
-    #IO.puts("#{r.facing}, #{r.x}, #{r.y}")
   end
 
   @doc """

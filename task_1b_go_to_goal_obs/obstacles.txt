@@ -1,4 +1,7 @@
-4, a, east | 5, a, west
-4, a, north | 4, b, south
+1, d, north | 1, e, south
+1, d, east | 2, d, west
+2, c, north | 2, d, south
+
+
 
 
