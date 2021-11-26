@@ -20,8 +20,8 @@ use Mix.Config
 #
 #     config :logger, level: :info
 #
-config :phoenix_server, url: "ws://90f1-47-9-114-215.ngrok.io/socket/websocket"
-#config :phoenix_server, url: "ws://localhost:4000/socket/websocket"
+#config :phoenix_server, url: "ws://90f1-47-9-114-215.ngrok.io/socket/websocket"
+config :phoenix_server, url: "ws://localhost:4000/socket/websocket"
 
 # It is also possible to import configuration files, relative to this
 # directory. For example, you can emulate configuration per environment
