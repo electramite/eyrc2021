@@ -1,0 +1,10 @@
+A => 1, a, north
+B => 5, a, north
+A => 1, b, north
+B => 5, b, north
+A => 1, c, north
+B => 5, c, north
+A => 1, d, north
+B => 5, d, north
+A => 1, e, north
+B => 5, e, north

@@ -90,6 +90,7 @@ defmodule ToyRobot do
         pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
         Process.register(pid, :client_toyrobot)
         obstacle()
+        #{robot, id}
         {:ok, robot}
       val == :true ->
         ## if obstacle is present
@@ -798,7 +799,7 @@ end
               else
                 {:ok, robot}
               end
-          robot.x == goal_x ->
+          robot.x == goal_x -> # goal is located on the same line
             cond do
               robot.x == 1 ->
               ## check only right
@@ -809,11 +810,13 @@ end
               cond do
                 val == :false ->
                   ## if no obstacle at right, move one block forward
+                  IO.puts("executed")
                   robot = move(robot)
                   pid = spawn_link(fn -> flag = send_robot_status(robot, :cli_robot_state); send(id, flag) end)
                   Process.register(pid, :client_toyrobot)
                   obstacle()
-                  {:ok, robot} = left_check(robot, id)
+                  #{:ok, robot} = left_check(robot, id)
+                  {:ok, robot} = right_left_check(:left, robot, id)
                   {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
                   {:ok, robot}
                 val == :true ->
@@ -1200,9 +1203,22 @@ end
             val = obstacle()
             if val == :true do # if obstacle at north
               ## still left to consider
+              cond do
+                robot.x == 5 ->
+                  #{robot, id} = left_check(robot, id)
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+                robot.x == 1 ->
+                  #{robot, id} = right_check(robot, id)
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+              end
             else
               {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
-              {:ok, robot}
+              {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+              {:ok, robot}  # changed
             end
           right_facing != :north ->
             cond do
@@ -1217,9 +1233,22 @@ end
                 val = obstacle()
                 if val == :true do # if obstacle at north
                 ## still left to consider
+                cond do
+                  robot.x == 5 ->
+                    #{robot, id} = left_check(robot, id)
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                  robot.x == 1 ->
+                    #{robot, id} = right_check(robot, id)
+                    {:ok, robot} = right_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                end
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
-                  {:ok, robot}
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}  # changed
                 end
               del_d == 1 or del_d == 3 ->
                 robot = left(robot)
@@ -1227,13 +1256,23 @@ end
                 Process.register(pid, :client_toyrobot)
                 val = obstacle()
                 if val == :true do # if obstacle at north
-                  {:ok, robot} = right_check(robot, id)
-                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
-                  {:ok, robot}
+                cond do
+                  robot.x == 5 ->
+                    #{robot, id} = left_check(robot, id)
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                  robot.x == 1 ->
+                    #{robot, id} = right_check(robot, id)
+                    {:ok, robot} = right_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                end
 
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
-                  {:ok, robot}
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}  # changed
                 end
               del_d == 0 ->
                 {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
@@ -1252,9 +1291,22 @@ end
             val = obstacle()
             if val == :true do # if obstacle at north
               ## still left to consider
+              cond do
+                robot.x == 1 ->
+                  #{robot, id} = left_check(robot, id)
+                  {:ok, robot} = left_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+                robot.x == 5 ->
+                  #{robot, id} = right_check(robot, id)
+                  {:ok, robot} = right_check(robot, id)
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}
+              end
             else
               {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
-              {:ok, robot}
+              {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+              {:ok, robot}  # changed
             end
           right_facing != :south ->
             cond do
@@ -1269,9 +1321,22 @@ end
                 val = obstacle()
                 if val == :true do # if obstacle at north
                 ## still left to consider
+                cond do
+                  robot.x == 1 ->
+                    #{robot, id} = left_check(robot, id)
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                  robot.x == 5 ->
+                    #{robot, id} = right_check(robot, id)
+                    {:ok, robot} = right_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                end
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
-                  {:ok, robot}
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}  # changed
                 end
               del_d == 1 or del_d == 3 ->
                 robot = left(robot)
@@ -1280,9 +1345,22 @@ end
                 val = obstacle()
                 if val == :true do # if obstacle at north
                 ## still left to consider
+                cond do
+                  robot.x == 1 ->
+                    #{robot, id} = left_check(robot, id)
+                    {:ok, robot} = left_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                  robot.x == 5 ->
+                    #{robot, id} = right_check(robot, id)
+                    {:ok, robot} = right_check(robot, id)
+                    {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                    {:ok, robot}
+                end
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
-                  {:ok, robot}
+                  {:ok, robot} = stop_yx(goal_x, goal_y, robot, id)
+                  {:ok, robot}  # changed
                 end
               del_d == 0 ->
                 {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
@@ -1313,9 +1391,17 @@ end
             val = obstacle()
             if val == :true do # if obstacle at east
               ## still left to consider
-                  {:ok, robot} = left_check(robot, id)
-                  {:ok, robot} = stop_xy(goal_x, goal_y, robot, id)
-                  {:ok, robot}
+              cond do
+                robot.x == 1 ->
+                  cond do
+                    robot.y == :e ->
+                      {robot, id} = right_check(robot, id)
+                      {robot, id}
+                    robot.y == :a ->
+                      {robot, id} = left_check(robot, id)
+                      {robot, id}
+                  end
+              end
             else
               {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
               {:ok, robot}
@@ -1333,6 +1419,17 @@ end
                 val = obstacle()
                 if val == :true do # if obstacle at east
                 ## still left to consider
+                cond do
+                  robot.x == 1 ->
+                    cond do
+                      robot.y == :e ->
+                        {robot, id} = right_check(robot, id)
+                        {robot, id}
+                      robot.y == :a ->
+                        {robot, id} = left_check(robot, id)
+                        {robot, id}
+                    end
+                end
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
                   {:ok, robot}
@@ -1344,6 +1441,18 @@ end
                 val = obstacle()
                 if val == :true do # if obstacle at north
                 ## still left to consider
+                cond do
+                  robot.x == 1 ->
+                    cond do
+                      robot.y == :e ->
+                        {robot, id} = right_check(robot, id)
+                        {robot, id}
+                      robot.y == :a ->
+                        {robot, id} = left_check(robot, id)
+                        {robot, id}
+                    end
+                end
+
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
                   {:ok, robot}
@@ -1365,6 +1474,17 @@ end
             val = obstacle()
             if val == :true do # if obstacle at west
               ## still left to consider
+              cond do
+                robot.x == 5 ->
+                  cond do
+                    robot.y == :a ->
+                      {robot, id} = right_check(robot, id)
+                      {robot, id}
+                    robot.y == :e ->
+                      {robot, id} = left_check(robot, id)
+                      {robot, id}
+                  end
+              end
             else
               {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
               {:ok, robot}
@@ -1382,6 +1502,18 @@ end
                 val = obstacle()
                 if val == :true do # if obstacle at north
                 ## still left to consider
+                cond do
+                  robot.x == 5 ->
+                    cond do
+                      robot.y == :a ->
+                        {robot, id} = right_check(robot, id)
+                        {robot, id}
+                      robot.y == :e ->
+                        {robot, id} = left_check(robot, id)
+                        {robot, id}
+                    end
+                end
+
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
                   {:ok, robot}
@@ -1393,6 +1525,17 @@ end
                 val = obstacle()
                 if val == :true do # if obstacle at north
                 ## still left to consider
+                cond do
+                  robot.x == 5 ->
+                    cond do
+                      robot.y == :a ->
+                        {robot, id} = right_check(robot, id)
+                        {robot, id}
+                      robot.y == :e ->
+                        {robot, id} = left_check(robot, id)
+                        {robot, id}
+                    end
+                end
                 else
                   {:ok, robot} = move_along_xy(goal_x, goal_y, robot, id)
                   {:ok, robot}
@@ -1430,6 +1573,8 @@ end
       robot.y != goal_y ->
         {:ok, robot} = way_to_go(goal_x, goal_y, robot, id)
         {:ok, robot} = stop_xy(goal_x, goal_y, robot, id)
+        {:ok, robot}
+      :true ->
         {:ok, robot}
     end
   end
@@ -1469,7 +1614,8 @@ end
     val = obstacle()
     if val == :true do
       {:ok, robot} = way_to_go(goal_x, goal_y, robot, id)
-      {:ok, robot}
+      stop_yx(goal_x, goal_y, robot, id)
+      ##{:ok, robot}
     else
       stop_yx(goal_x, goal_y, robot, id)
     end
